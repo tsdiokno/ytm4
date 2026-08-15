@@ -1,0 +1,16 @@
+{
+  "queue": [
+    {
+      "url": "https://www.youtube.com/watch?v=bgjOVbCZCFI",
+      "videoId": "bgjOVbCZCFI",
+      "title": "nothing,nowhere. - Dying For Attention",
+      "addedAt": 1786773375
+    }
+  ],
+  "playback": {
+    "currentVideoId": null,
+    "isPlaying": false,
+    "elapsedMs": 0,
+    "updatedAt": 0
+  }
+}

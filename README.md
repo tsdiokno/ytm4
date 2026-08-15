@@ -2,19 +2,24 @@
 
 ![image](/../main/screenshot-crowdq.png?raw=true "Screenshot")
 
-**Crowd-Q** is a simple, lightweight web app for creating a **collaborative YouTube Music queue**.  
-Inspired by Spotify’s *Jam* feature — but built for YouTube — it lets everyone in the room add to one shared queue while **playback stays centralized** on the host device.
+**Crowd-Q** is a modern, lightweight web app for creating a **collaborative YouTube Music queue**.  
+Inspired by Spotify’s *Jam* feature — but built for YouTube — it lets everyone in the room add songs to one shared queue while **playback stays centralized** on the host device.
 
 > 🎵 One playback. One room. Everyone in control.
 
+---
+
 ## 🚀 Features
 
-- **Collaborative Queue** — Anyone connected can add YouTube links to the shared queue.  
+- **Collaborative Queue** — Anyone connected can add YouTube and YouTube Music links to the shared queue.  
 - **Centralized Playback** — Playback happens on a single host device; no synchronization required.  
-- **Real-Time Queue Updates** — The queue refreshes automatically every 30 seconds or on demand.  
-- **Password Protection** — Only the host can control playback.  
-- **Lightweight Design** — Minimal dependencies, fast and simple UI.  
-- **Video Info** — Automatically shows thumbnails and titles (when API key is set).
+- **Real-Time Queue Updates** — Smart polling with browser tab visibility detection.  
+- **Modern UI** — Built with **React 19**, **Tailwind CSS**, and **Lucide Icons** in a dark-mode theme.  
+- **Password Protection** — Host mode unlocks central playback controls (`Play`, `Pause`, `Skip`, `Clear`).  
+- **Resilient Video Info** — Supports YouTube Data API with automatic public oEmbed fallback for track titles.  
+- **Modern PHP Backend** — Concurrency-safe atomic writes (`flock`), PSR-4 autoloading, and clean RESTful API routing.
+
+---
 
 ## 🎧 What Makes Crowd-Q Different?
 
@@ -29,89 +34,87 @@ It’s designed for *same-room experiences* — a crowd-powered DJ setup, not a 
 | **SyncTube / YouTube Sync** | Watch YouTube videos **in sync** across devices   | Fully synchronized playback       | Host-led shared viewing           | Remote / multi-device   | Focused on *synchronized watching*, not shared control |
 | **Spotify Jam**             | Group listening via Spotify app                   | Fully synchronized playback       | Invite-only group session         | Local or remote         | Similar to SyncTube but *natively integrated* in Spotify |
 
-> 🟡 *Crowd-Q = Shared Control, One Playback (Same Room)*  
-> 🔵 *Others = Synchronized Playback (Across Devices)*
+---
 
-## 💡 Why Use This?
-
-**Crowd-Q** is perfect for:
-- House parties or gatherings using YouTube Music as the main platform.  
-- Shared music sessions where multiple people want to contribute songs.  
-- Situations where only one speaker or playback device is available.
-
-If you’re looking for *synchronized playback across devices*, check out other great tools like **SyncTube** or **Spotify Jam**.  
-But if you want **a shared, same-room queue experience**, Crowd-Q is built exactly for that — and future development will stay focused on **queueing and collaborative control**, not syncing.
-
-## ⚙️ Installation
+## ⚙️ Modern Development Workflow (pnpm + PHP)
 
 ### Prerequisites
-- A web server with PHP support (e.g. Apache, Nginx)  
-- A modern browser with JavaScript enabled  
-- *(Optional)* YouTube Data API key for displaying video titles
+- [Node.js](https://nodejs.org/) (v18+) and [pnpm](https://pnpm.io/) (v9+)
+- [PHP](https://www.php.net/) (v8.0+)
+- *(Optional)* [Composer](https://getcomposer.org/)
 
-### Steps
-1. Clone this repository:
+### 🛠️ Quick Start (Development)
+
+1. **Clone the repository**:
    ```bash
    git clone https://github.com/tsdiokno/ytm4.git
+   cd crowd-q
    ```
 
-2. Place the files in your web server’s root directory.
-3. Ensure `queue.json` is writable.
-4. *(Optional)* Create a `config.json` file with:
-
-   ```json
-   {
-     "youtube_api_key": "YOUR_API_KEY"
-   }
+2. **Install frontend dependencies with pnpm**:
+   ```bash
+   pnpm install
    ```
-5. Start your server and open the app in your browser.
+
+3. **(Optional) Configure YouTube Data API**:
+   Copy the example configuration:
+   ```bash
+   cp config.json.example config.json
+   ```
+   Add your API key inside `config.json`.
+
+4. **Run Full-Stack Dev Environment**:
+   ```bash
+   # Starts both Vite frontend (with HMR & proxy) and PHP backend
+   pnpm run dev:all
+   ```
+   Or start them individually in separate terminals:
+   ```bash
+   # Terminal 1: PHP Backend API (port 8000)
+   pnpm run dev:php
+
+   # Terminal 2: Vite React Frontend (port 5173)
+   pnpm run dev
+   ```
+
+5. **Build for Production**:
+   ```bash
+   pnpm run build
+   ```
+   The compiled static assets will be in the `dist/` directory.
+
+---
 
 ## 🎚️ Usage
 
 ### Host
-
-1. Open the app in your browser.
-2. Enter the **host password** (default: `12345`) to unlock playback controls.
-3. Connect your output device (speaker, sound system).
+1. Open the app in your browser on the host device connected to speakers.
+2. Click **Host Login** (top right) and enter the password (default: `12345`).
+3. Control centralized playback (`Play`, `Pause`, `Skip`, `Clear`).
 
 ### Guest
+1. Connect to the same local network or URL.
+2. Paste any YouTube or YouTube Music track/short URL into the search bar and click **Add to Queue**.
 
-1. Join the same network as the host.
-2. Open the app in a browser.
-3. Add YouTube links to the queue and enjoy the music!
+---
 
-## 🧠 Technical Overview
+## 🧠 Architecture Overview
 
-* **Frontend:** HTML, CSS, vanilla JavaScript (YouTube IFrame Player API).
-* **Backend:** PHP scripts (`save_queue.php`, `get_queue.php`) managing `queue.json`.
-* **Queue Refresh:** Automatic every 30 seconds or manual refresh.
+* **Frontend:** React 19, Vite, Tailwind CSS, Lucide Icons, YouTube IFrame API, **pnpm package manager**.
+* **Backend:** Modern PHP 8+ with PSR-4 autoloading (`src/php/QueueService.php`, `src/php/ConfigService.php`, `src/php/Response.php`).
+* **API Routing:** `api/index.php` RESTful router (`/api/queue`, `/api/queue/next`, `/api/queue/clear`, `/api/config`).
+* **Data Storage:** `queue.json` with exclusive file-locking (`flock(LOCK_EX)`).
 
-## ⚠️ Known Limitations
-
-* The YouTube IFrame Player API may restrict playback in development environments — use production hosting.
-* The app is intentionally basic; features like live sockets or advanced metadata can be added via forks.
+---
 
 ## 🧾 License
 
 This project is licensed under the **Mozilla Public License 2.0 (MPL-2.0)**.  
 See the [LICENSE](LICENSE) file for full details.
 
-### Why the Change
-Crowd-Q was originally licensed under **GPL-3.0**, but it has been changed to **MPL-2.0** to encourage broader collaboration and flexibility.  
-MPL keeps the project open-source while allowing developers to integrate or extend specific components without being forced to open-source their entire application.  
-
-> In short: MPL-2.0 protects the openness of Crowd-Q’s core, while making it easier for others to build on it responsibly.
-
-## 🤝 Contributing
-
-1. Fork the repo.
-2. Create a feature branch (`git checkout -b feature-name`).
-3. Commit and push (`git commit -m 'Add feature'`).
-4. Submit a pull request.
+---
 
 ## 🙏 Acknowledgments
 
-Built by **@tsdiokno**, with design-first simplicity and the help of **ChatGPT**.
-**Crowd-Q** stays focused on what it does best: a **shared queue experience** — not a sync app, but a social DJ tool.
-
+Built by **@tsdiokno** with design-first simplicity.  
 > “Let the crowd run the queue.” 🎶

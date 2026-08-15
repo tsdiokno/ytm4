@@ -1,0 +1,23 @@
+{
+  "name": "tsdiokno/crowd-q",
+  "description": "Collaborative YouTube Music Queue - Modern PHP Backend",
+  "type": "project",
+  "license": "MPL-2.0",
+  "authors": [
+    {
+      "name": "Timothy Diokno"
+    }
+  ],
+  "require": {
+    "php": ">=8.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "CrowdQ\\": "src/php/"
+    }
+  },
+  "scripts": {
+    "start": "php -S localhost:8000 api/index.php",
+    "lint": "php -l api/index.php && php -l src/php/QueueService.php && php -l src/php/Response.php && php -l src/php/ConfigService.php"
+  }
+}

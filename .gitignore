@@ -1,28 +1,8 @@
-# Dependencies
 node_modules/
-vendor/
-
-# Production build
+build/
 dist/
-
-# Configuration files with sensitive data
-config.json
-
-# IDE and editor files
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS files
+coverage/
 .DS_Store
-Thumbs.db
-
-# Log files
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Optional queue persistent ignore (if not tracked)
-# queue.json
+*.log
+.env*
+!.env.example

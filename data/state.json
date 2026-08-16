@@ -1,0 +1,19 @@
+{
+  "status": "idle",
+  "currentTrack": {
+    "id": "jfKfPfyJRdk",
+    "url": "https://www.youtube.com/watch?v=jfKfPfyJRdk",
+    "title": "lofi hip hop radio 📚 - beats to relax/study to",
+    "author": "Lofi Girl",
+    "thumbnail": "https://i.ytimg.com/vi/jfKfPfyJRdk/hqdefault.jpg",
+    "duration": 3600,
+    "addedBy": "System",
+    "addedAt": 1723790400000,
+    "uid": "init-track-1"
+  },
+  "referenceTime": 0,
+  "epochTimestamp": 1723790400,
+  "playbackRate": 1.0,
+  "version": 1,
+  "updatedAt": 1723790400
+}

@@ -1,23 +1,34 @@
 {
-  "name": "tsdiokno/crowd-q",
-  "description": "Collaborative YouTube Music Queue - Modern PHP Backend",
+  "name": "crowd-q/crowd-q",
+  "description": "Synchronized YouTube Queue and Jukebox with PHP State Engine and Epoch Calculations",
   "type": "project",
-  "license": "MPL-2.0",
+  "license": "MIT",
   "authors": [
     {
-      "name": "Timothy Diokno"
+      "name": "Crowd-Q Team"
     }
   ],
   "require": {
-    "php": ">=8.0"
+    "php": "^7.4 || ^8.0 || ^8.1 || ^8.2 || ^8.3",
+    "ext-json": "*",
+    "ext-curl": "*"
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^1.10",
+    "phpunit/phpunit": "^9.6 || ^10.0"
   },
   "autoload": {
-    "psr-4": {
-      "CrowdQ\\": "src/php/"
-    }
+    "files": [
+      "api/common.php"
+    ]
   },
   "scripts": {
-    "start": "php -S localhost:8000 api/index.php",
-    "lint": "php -l api/index.php && php -l src/php/QueueService.php && php -l src/php/Response.php && php -l src/php/ConfigService.php"
+    "serve": "php -S 127.0.0.1:8000 scripts/php-router.php",
+    "lint": "phpstan analyse api --level=5",
+    "test": "phpunit tests"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
   }
 }

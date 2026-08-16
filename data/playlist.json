@@ -1,0 +1,44 @@
+{
+  "queue": [],
+  "history": [
+    {
+      "id": "DWcJFNfaw9k",
+      "url": "https://www.youtube.com/watch?v=DWcJFNfaw9k",
+      "title": "synthwave radio 🌌 - chill synth / retro beats",
+      "author": "Lofi Girl Synthwave",
+      "thumbnail": "https://i.ytimg.com/vi/DWcJFNfaw9k/hqdefault.jpg",
+      "duration": 240,
+      "addedBy": "Sam",
+      "addedAt": 1723790600000,
+      "uid": "init-track-3"
+    },
+    {
+      "id": "5qap5aO4i9A",
+      "url": "https://www.youtube.com/watch?v=5qap5aO4i9A",
+      "title": "Lofi Hip Hop Radio 24/7 🔴 Chill Beats to Study/Relax",
+      "author": "ChillHop Music",
+      "thumbnail": "https://i.ytimg.com/vi/5qap5aO4i9A/hqdefault.jpg",
+      "duration": 180,
+      "addedBy": "Alex",
+      "addedAt": 1723790500000,
+      "uid": "init-track-2"
+    },
+    {
+      "id": "jfKfPfyJRdk",
+      "url": "https://www.youtube.com/watch?v=jfKfPfyJRdk",
+      "title": "lofi hip hop radio 📚 - beats to relax/study to",
+      "author": "Lofi Girl",
+      "thumbnail": "https://i.ytimg.com/vi/jfKfPfyJRdk/hqdefault.jpg",
+      "duration": 3600,
+      "addedBy": "System",
+      "addedAt": 1723790400000,
+      "uid": "init-track-1"
+    }
+  ],
+  "settings": {
+    "roomName": "Crowd-Q Lounge",
+    "hostPasswordHash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+    "allowGuestDelete": true,
+    "maxQueueSize": 50
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Crowd-Q - Synchronized YouTube Queue",
+  "description": "Crowd-Q playlist and Jukebox with YouTube/YouTube Music support, epoch-inferred playhead sync, and PHP/JSON backend architecture.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,20 +1,73 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Crowd-Q: Let the Crowd Run the Queue
 
-# Run and deploy your AI Studio app
+![Screenshot](/../main/screenshot-crowdq.png?raw=true "Crowd-Q Screenshot")
 
-This contains everything you need to run your app locally.
+**Crowd-Q** is a modern, lightweight web app for creating a **collaborative YouTube Music queue**.  
+Inspired by Spotify’s *Jam* feature — but built for YouTube — it lets everyone in the room add songs to one shared queue while **playback stays centralized** on the host device.
 
-View your app in AI Studio: https://ai.studio/apps/edef1265-c2e8-4dba-b799-c028b9ab0924
+> 🎵 One playback. One room. Everyone in control.
 
-## Run Locally
+---
 
-**Prerequisites:**  Node.js
+## ⚡ Upcoming: v2.0.0 Architecture Overhaul
 
+> **Built with Google AI Studio**: The original vanilla JS/PHP architecture worked wonderfully, but **v2.0.0 is an upcoming major overhaul** re-engineered entirely with Google AI Studio for a modern full-stack developer experience.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### 🌟 Key Upgrades (v1.x Vanilla ➔ v2.0.0 Modern)
+- **Frontend**: Upgraded to **React 19 + TypeScript + Tailwind CSS v4** with Lucide Icons and reactive state.
+- **Backend API**: Refactored to a **PSR-4 PHP 8+ service layer** (`QueueService`, `ConfigService`) with clean `/api/*` REST routing.
+- **Concurrency**: Concurrency-safe atomic writes via `flock(LOCK_EX)` preventing race conditions.
+- **Dev Tooling**: Modern **Vite + pnpm workflow**, built-in proxying, and zero-config **Laravel Herd / Valet** support (`LocalValetDriver.php`).
+- **Resilience**: Hybrid YouTube metadata resolver with automatic public oEmbed fallback.
+
+---
+
+## 🚀 Key Features
+
+- **Collaborative Queue** — Anyone on the local network can add YouTube/YouTube Music links.
+- **Centralized Host Playback** — Audio plays solely on the host device connected to speakers.
+- **Real-Time Sync** — Resilient smart polling with tab visibility detection.
+- **Host Controls** — Password-protected host mode for playback management (`Play`, `Pause`, `Skip`, `Clear`).
+- **Zero Database Setup** — Fast, self-contained JSON storage with atomic locks.
+
+---
+
+## ⚙️ Quick Start (Development)
+
+### Prerequisites
+- Node.js (v18+) & [pnpm](https://pnpm.io/)
+- PHP (v8.0+) or [Laravel Herd](https://herd.laravel.com/)
+
+```bash
+# 1. Clone & install
+git clone https://github.com/tsdiokno/ytm4.git
+cd crowd-q
+pnpm install
+
+# 2. Start Vite Dev Server (proxies to PHP)
+pnpm run dev:all
+
+# Or run separately:
+# Terminal 1: pnpm run dev:php  (PHP on port 8000)
+# Terminal 2: pnpm run dev      (Vite Frontend)
+```
+
+### Production Build
+```bash
+pnpm run build
+```
+Compiled static assets and PHP backend files will be assembled in `dist/`.
+
+---
+
+## 🎚️ How It Works
+
+1. **Host**: Open the app on the device connected to speakers. Click **Host Login** (default: `12345`) to unlock playback controls.
+2. **Guests**: Open the URL on phones/laptops, paste any YouTube link, and hit **Add to Queue**.
+
+---
+
+## 🧾 License & Credits
+
+- **License**: [Mozilla Public License 2.0 (MPL-2.0)](LICENSE)
+- **Created by**: **@tsdiokno** — reworked with **Google AI Studio**

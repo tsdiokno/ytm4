@@ -7,10 +7,10 @@ import { ListMusic, History, Trash2, ArrowUp, ArrowDown, Music2, User } from 'lu
 interface QueueListProps {
   playlist: PlaylistData;
   isHost: boolean;
-  onQueueUpdated: () => void;
+  onQueueUpdated?: () => void;
 }
 
-export const QueueList: React.FC<QueueListProps> = ({ playlist, isHost, onQueueUpdated }) => {
+export const QueueList: React.FC<QueueListProps> = React.memo(({ playlist, isHost }) => {
   const [activeTab, setActiveTab] = useState<'queue' | 'history'>('queue');
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
@@ -21,7 +21,6 @@ export const QueueList: React.FC<QueueListProps> = ({ playlist, isHost, onQueueU
     setIsDeleting(uid);
     try {
       await removeSongFromQueue(uid);
-      onQueueUpdated();
     } finally {
       setIsDeleting(null);
     }
@@ -37,7 +36,6 @@ export const QueueList: React.FC<QueueListProps> = ({ playlist, isHost, onQueueU
     updated.splice(targetIndex, 0, item);
 
     await reorderQueue(updated);
-    onQueueUpdated();
   };
 
   return (
@@ -210,4 +208,4 @@ export const QueueList: React.FC<QueueListProps> = ({ playlist, isHost, onQueueU
       )}
     </div>
   );
-};
+});

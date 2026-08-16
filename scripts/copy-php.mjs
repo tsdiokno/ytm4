@@ -37,4 +37,10 @@ if (fs.existsSync(htaccessPath)) {
   fs.copyFileSync(htaccessPath, path.join(distDir, '.htaccess'));
 }
 
-console.log('✅ PHP API scripts, data directory, and .htaccess copied to dist/ successfully.');
+// Copy LocalValetDriver.php
+const valetDriverPath = path.resolve('LocalValetDriver.php');
+if (fs.existsSync(valetDriverPath)) {
+  fs.copyFileSync(valetDriverPath, path.join(distDir, 'LocalValetDriver.php'));
+}
+
+console.log('✅ PHP API scripts, data directory, .htaccess, and LocalValetDriver.php copied to dist/ successfully.');

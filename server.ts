@@ -22,11 +22,9 @@ function ensureDataFiles() {
     const initialState = {
       status: 'idle',
       currentTrack: null,
-      referenceTime: 0,
-      epochTimestamp: Date.now() / 1000,
-      playbackRate: 1.0,
+      currentTime: 0,
       version: 1,
-      updatedAt: Date.now() / 1000,
+      updatedAt: Math.floor(Date.now() / 1000),
     };
     fs.writeFileSync(STATE_FILE, JSON.stringify(initialState, null, 2));
   }
@@ -56,11 +54,9 @@ function readState() {
     return {
       status: 'idle',
       currentTrack: null,
-      referenceTime: 0,
-      epochTimestamp: Date.now() / 1000,
-      playbackRate: 1.0,
+      currentTime: 0,
       version: 1,
-      updatedAt: Date.now() / 1000,
+      updatedAt: Math.floor(Date.now() / 1000),
     };
   }
 }
@@ -114,22 +110,23 @@ const handleSync = (req: express.Request, res: express.Response) => {
   const safeSettings = { ...(playlist.settings || {}) };
   delete safeSettings.hostPasswordHash;
 
-  const etag = `"${crypto.createHash('md5').update(`${state.version}-${state.updatedAt}-${(playlist.queue || []).length}`).digest('hex')}"`;
+  const queueSig = (playlist.queue || []).map((q: any) => q.uid).join(',');
+  const etag = `"${crypto.createHash('md5').update(`${state.version}-${state.updatedAt}-${queueSig}`).digest('hex')}"`;
   res.setHeader('ETag', etag);
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Cache-Control', 'private, no-cache, no-transform');
 
   if (req.headers['if-none-match'] === etag) {
     return res.status(304).end();
   }
 
   res.json({
-    serverTime: Date.now() / 1000,
     state,
     playlist: {
       queue: playlist.queue || [],
       history: playlist.history || [],
       settings: safeSettings,
     },
+    timestamp: Math.floor(Date.now() / 1000),
   });
 };
 
@@ -169,22 +166,20 @@ const handleState = (req: express.Request, res: express.Response) => {
 
   const input = req.body || {};
   const state = readState();
-  const now = Date.now() / 1000;
+  const now = Math.floor(Date.now() / 1000);
 
   if (input.status && ['playing', 'paused', 'idle', 'buffering', 'ended'].includes(input.status)) {
     state.status = input.status;
   }
-  if (typeof input.referenceTime === 'number') {
-    state.referenceTime = Math.max(0, input.referenceTime);
-  }
-  if (typeof input.playbackRate === 'number' && input.playbackRate > 0) {
-    state.playbackRate = input.playbackRate;
+  if (typeof input.currentTime === 'number') {
+    state.currentTime = Math.max(0, input.currentTime);
+  } else if (typeof input.referenceTime === 'number') {
+    state.currentTime = Math.max(0, input.referenceTime);
   }
   if (input.currentTrack !== undefined) {
     state.currentTrack = input.currentTrack;
   }
 
-  state.epochTimestamp = typeof input.epochTimestamp === 'number' ? input.epochTimestamp : now;
   state.version = (state.version || 0) + 1;
   state.updatedAt = now;
 
@@ -193,7 +188,6 @@ const handleState = (req: express.Request, res: express.Response) => {
   res.json({
     success: true,
     state,
-    serverTime: now,
   });
 };
 
@@ -201,118 +195,102 @@ app.post('/api/state.php', handleState);
 app.post('/api/state', handleState);
 
 // Queue endpoint (Add / Delete / Reorder)
-app.all(['/api/queue.php', '/api/queue'], (req, res) => {
-  const method = req.method;
+const handleQueueAdd = (req: express.Request, res: express.Response) => {
   const playlist = readPlaylist();
+  const { id, url, title, author, thumbnail, duration, addedBy, playImmediately } = req.body || {};
+  if (!id) {
+    return res.status(400).json({ error: 'Invalid YouTube track ID' });
+  }
 
-  if (method === 'POST') {
-    const { id, url, title, author, thumbnail, duration, addedBy, playImmediately } = req.body || {};
-    if (!id) {
-      return res.status(400).json({ error: 'Invalid YouTube track ID' });
-    }
+  const trackItem = {
+    id: String(id).trim(),
+    url: String(url || `https://www.youtube.com/watch?v=${id}`).trim(),
+    title: String(title || 'YouTube Track').trim(),
+    author: String(author || 'YouTube Creator').trim(),
+    thumbnail: String(thumbnail || `https://i.ytimg.com/vi/${id}/hqdefault.jpg`).trim(),
+    duration: Number(duration) > 0 ? Number(duration) : 180,
+    addedBy: String(addedBy || 'Guest').trim(),
+    addedAt: Date.now(),
+    uid: `track_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+  };
 
-    const trackItem = {
-      id: String(id).trim(),
-      url: String(url || `https://www.youtube.com/watch?v=${id}`).trim(),
-      title: String(title || 'YouTube Track').trim(),
-      author: String(author || 'YouTube Creator').trim(),
-      thumbnail: String(thumbnail || `https://i.ytimg.com/vi/${id}/hqdefault.jpg`).trim(),
-      duration: Number(duration) > 0 ? Number(duration) : 180,
-      addedBy: String(addedBy || 'Guest').trim(),
-      addedAt: Date.now(),
-      uid: `track_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
-    };
-
-    if (playImmediately && verifyHostAuth(req)) {
-      const state = readState();
-      if (state.currentTrack) {
-        playlist.history = [state.currentTrack, ...(playlist.history || [])].slice(0, 30);
-      }
-      const now = Date.now() / 1000;
-      state.currentTrack = trackItem;
-      state.status = 'playing';
-      state.referenceTime = 0;
-      state.epochTimestamp = now;
-      state.version = (state.version || 0) + 1;
-      state.updatedAt = now;
-
-      writeState(state);
-      writePlaylist(playlist);
-
-      return res.json({
-        success: true,
-        message: 'Playing immediately',
-        track: trackItem,
-        state,
-        playlist,
-      });
-    }
-
-    playlist.queue = [...(playlist.queue || []), trackItem];
-
-    // If currently idle without active track, load it automatically
+  if (playImmediately && verifyHostAuth(req)) {
     const state = readState();
-    let stateUpdated = false;
-    if (!state.currentTrack || state.status === 'idle') {
-      const next = playlist.queue.shift();
-      state.currentTrack = next;
-      state.status = 'playing';
-      state.referenceTime = 0;
-      const now = Date.now() / 1000;
-      state.epochTimestamp = now;
-      state.version = (state.version || 0) + 1;
-      state.updatedAt = now;
-      stateUpdated = true;
-      writeState(state);
+    if (state.currentTrack) {
+      playlist.history = [state.currentTrack, ...(playlist.history || [])].slice(0, 30);
     }
+    const now = Math.floor(Date.now() / 1000);
+    state.currentTrack = trackItem;
+    state.status = 'playing';
+    state.currentTime = 0;
+    state.version = (state.version || 0) + 1;
+    state.updatedAt = now;
 
+    writeState(state);
     writePlaylist(playlist);
 
     return res.json({
       success: true,
+      message: 'Playing immediately',
       track: trackItem,
-      queue: playlist.queue,
-      state: stateUpdated ? state : null,
+      state,
+      playlist,
     });
   }
 
-  if (method === 'DELETE') {
-    const uid = req.query.uid as string;
-    if (!uid) {
-      return res.status(400).json({ error: 'Missing track UID' });
-    }
+  playlist.queue = [...(playlist.queue || []), trackItem];
+  writePlaylist(playlist);
 
-    const isHost = verifyHostAuth(req);
-    const allowGuestDelete = playlist.settings?.allowGuestDelete ?? true;
+  return res.json({
+    success: true,
+    track: trackItem,
+    queue: playlist.queue,
+  });
+};
 
-    if (!isHost && !allowGuestDelete) {
-      return res.status(403).json({ error: 'Unauthorized: Only host can remove items from queue' });
-    }
+const handleQueueDelete = (req: express.Request, res: express.Response) => {
+  const playlist = readPlaylist();
+  const uid = req.query.uid as string;
+  if (!uid) {
+    return res.status(400).json({ error: 'Missing track UID' });
+  }
 
-    playlist.queue = (playlist.queue || []).filter((item: any) => item.uid !== uid);
+  const isHost = verifyHostAuth(req);
+  const allowGuestDelete = playlist.settings?.allowGuestDelete ?? true;
+
+  if (!isHost && !allowGuestDelete) {
+    return res.status(403).json({ error: 'Unauthorized: Only host can remove items from queue' });
+  }
+
+  playlist.queue = (playlist.queue || []).filter((item: any) => item.uid !== uid);
+  writePlaylist(playlist);
+
+  return res.json({
+    success: true,
+    queue: playlist.queue,
+  });
+};
+
+const handleQueuePatch = (req: express.Request, res: express.Response) => {
+  if (!verifyHostAuth(req)) {
+    return res.status(401).json({ error: 'Unauthorized: Host credentials required' });
+  }
+  const playlist = readPlaylist();
+  const { queue } = req.body || {};
+  if (Array.isArray(queue)) {
+    playlist.queue = queue;
     writePlaylist(playlist);
-
-    return res.json({
-      success: true,
-      queue: playlist.queue,
-    });
+    return res.json({ success: true, queue: playlist.queue });
   }
+  return res.status(400).json({ error: 'Invalid queue payload' });
+};
 
-  if (method === 'PATCH') {
-    if (!verifyHostAuth(req)) {
-      return res.status(401).json({ error: 'Unauthorized: Host credentials required' });
-    }
-    const { queue } = req.body || {};
-    if (Array.isArray(queue)) {
-      playlist.queue = queue;
-      writePlaylist(playlist);
-      return res.json({ success: true, queue: playlist.queue });
-    }
-    return res.status(400).json({ error: 'Invalid queue payload' });
-  }
-
-  res.status(405).json({ error: 'Method not allowed' });
-});
+app.post('/api/queue.php', handleQueueAdd);
+app.post('/api/queue', handleQueueAdd);
+app.delete('/api/queue.php', handleQueueDelete);
+app.delete('/api/queue', handleQueueDelete);
+app.patch('/api/queue.php', handleQueuePatch);
+app.patch('/api/queue', handleQueuePatch);
 
 // Skip to next track endpoint (Host only)
 const handleSkip = (req: express.Request, res: express.Response) => {
@@ -328,7 +306,7 @@ const handleSkip = (req: express.Request, res: express.Response) => {
   }
 
   const queue = playlist.queue || [];
-  const now = Date.now() / 1000;
+  const now = Math.floor(Date.now() / 1000);
 
   if (queue.length > 0) {
     const nextTrack = queue.shift();
@@ -336,16 +314,13 @@ const handleSkip = (req: express.Request, res: express.Response) => {
 
     state.currentTrack = nextTrack;
     state.status = 'playing';
-    state.referenceTime = 0;
-    state.epochTimestamp = now;
-    state.playbackRate = 1.0;
+    state.currentTime = 0;
     state.version = (state.version || 0) + 1;
     state.updatedAt = now;
   } else {
     state.currentTrack = null;
     state.status = 'idle';
-    state.referenceTime = 0;
-    state.epochTimestamp = now;
+    state.currentTime = 0;
     state.version = (state.version || 0) + 1;
     state.updatedAt = now;
   }
@@ -357,7 +332,6 @@ const handleSkip = (req: express.Request, res: express.Response) => {
     success: true,
     state,
     playlist,
-    serverTime: now,
   });
 };
 
@@ -392,11 +366,54 @@ app.get(['/api/oembed.php', '/api/oembed'], async (req, res) => {
   }
 });
 
+// Settings update endpoint (Host only)
+const handleSettings = (req: express.Request, res: express.Response) => {
+  if (!verifyHostAuth(req)) {
+    return res.status(401).json({ error: 'Unauthorized: Host credentials required' });
+  }
+
+  const playlist = readPlaylist();
+  const settings = playlist.settings || {};
+  const input = req.body || {};
+
+  if (typeof input.roomName === 'string') {
+    settings.roomName = input.roomName.trim();
+  }
+  if (typeof input.maxQueueSize === 'number') {
+    settings.maxQueueSize = Math.max(5, Math.min(200, input.maxQueueSize));
+  }
+  if (typeof input.allowGuestDelete === 'boolean') {
+    settings.allowGuestDelete = input.allowGuestDelete;
+  }
+  if (input.password) {
+    settings.hostPasswordHash = crypto.createHash('sha256').update(String(input.password)).digest('hex');
+  }
+
+  playlist.settings = settings;
+  writePlaylist(playlist);
+
+  const safeSettings = { ...settings };
+  delete safeSettings.hostPasswordHash;
+
+  res.json({
+    success: true,
+    settings: safeSettings,
+  });
+};
+
+app.post('/api/settings.php', handleSettings);
+app.post('/api/settings', handleSettings);
+
 // Vite middleware & Production Serving
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        watch: {
+          ignored: ['**/data/**', '**/storage/**', '**/*.json'],
+        },
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);

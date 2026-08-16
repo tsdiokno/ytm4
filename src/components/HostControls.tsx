@@ -7,10 +7,10 @@ import { Play, Pause, SkipForward, RefreshCw, Radio } from 'lucide-react';
 interface HostControlsProps {
   state: PlaybackState;
   playhead: number;
-  onSyncNeeded: () => void;
+  onSyncNeeded?: () => void;
 }
 
-export const HostControls: React.FC<HostControlsProps> = ({ state, playhead, onSyncNeeded }) => {
+export const HostControls: React.FC<HostControlsProps> = React.memo(({ state, playhead, onSyncNeeded }) => {
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [isScrubbing, setIsScrubbing] = useState<boolean>(false);
   const [scrubPosition, setScrubPosition] = useState<number>(0);
@@ -26,10 +26,8 @@ export const HostControls: React.FC<HostControlsProps> = ({ state, playhead, onS
       const newStatus = state.status === 'playing' ? 'paused' : 'playing';
       await updatePlaybackState({
         status: newStatus,
-        referenceTime: playhead,
-        epochTimestamp: Date.now() / 1000,
+        currentTime: playhead,
       });
-      onSyncNeeded();
     } finally {
       setIsUpdating(false);
     }
@@ -59,10 +57,8 @@ export const HostControls: React.FC<HostControlsProps> = ({ state, playhead, onS
     setIsUpdating(true);
     try {
       await updatePlaybackState({
-        referenceTime: targetSeconds,
-        epochTimestamp: Date.now() / 1000,
+        currentTime: targetSeconds,
       });
-      onSyncNeeded();
     } finally {
       setIsUpdating(false);
     }
@@ -72,7 +68,6 @@ export const HostControls: React.FC<HostControlsProps> = ({ state, playhead, onS
     setIsUpdating(true);
     try {
       await skipTrack();
-      onSyncNeeded();
     } finally {
       setIsUpdating(false);
     }
@@ -84,10 +79,8 @@ export const HostControls: React.FC<HostControlsProps> = ({ state, playhead, onS
     setIsUpdating(true);
     try {
       await updatePlaybackState({
-        referenceTime: target,
-        epochTimestamp: Date.now() / 1000,
+        currentTime: target,
       });
-      onSyncNeeded();
     } finally {
       setIsUpdating(false);
     }
@@ -134,7 +127,7 @@ export const HostControls: React.FC<HostControlsProps> = ({ state, playhead, onS
 
         <div className="flex justify-between text-xs font-mono text-neutral-400">
           <span>{formatDuration(displayProgress)}</span>
-          <span className="text-neutral-500">Epoch Inferred Placement</span>
+          <span className="text-neutral-500">Authoritative State Progress</span>
           <span>{formatDuration(duration)}</span>
         </div>
       </div>
@@ -204,4 +197,4 @@ export const HostControls: React.FC<HostControlsProps> = ({ state, playhead, onS
       </div>
     </div>
   );
-};
+});

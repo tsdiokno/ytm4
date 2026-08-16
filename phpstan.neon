@@ -1,6 +1,5 @@
 parameters:
-  level: 5
+  level: 8
   paths:
-    - api
-  excludePaths:
-    - vendor/*
+    - api/src
+  checkMissingIterableValueType: true

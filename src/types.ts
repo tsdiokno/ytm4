@@ -15,9 +15,7 @@ export interface TrackItem {
 export interface PlaybackState {
   status: PlaybackStatus;
   currentTrack: TrackItem | null;
-  referenceTime: number; // in seconds
-  epochTimestamp: number; // in seconds (float or int)
-  playbackRate: number;
+  currentTime: number; // in seconds
   version: number;
   updatedAt: number;
 }
@@ -33,9 +31,9 @@ export interface PlaylistData {
 }
 
 export interface SyncResponse {
-  serverTime: number;
   state: PlaybackState;
   playlist: PlaylistData;
+  timestamp?: number;
 }
 
 export interface HostAuthResponse {

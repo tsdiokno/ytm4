@@ -13,19 +13,28 @@ declare global {
 
 interface HostPlayerProps {
   state: PlaybackState;
-  onSyncNeeded: () => void;
+  onSyncNeeded?: () => void;
 }
 
-export const HostPlayer: React.FC<HostPlayerProps> = ({ state, onSyncNeeded }) => {
+const HostPlayerComponent: React.FC<HostPlayerProps> = ({ state }) => {
+  console.log('%c[RENDER] HostPlayer', 'color: #3b82f6; font-weight: bold;', {
+    trackId: state.currentTrack?.id,
+    status: state.status,
+    version: state.version,
+  });
+
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
-  const [isPlayerReady, setIsPlayerReady] = useState<boolean>(false);
+  const isPlayerReadyRef = useRef<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [volume, setVolume] = useState<number>(85);
   const currentLoadedVideoIdRef = useRef<string | null>(null);
+  const lastSyncedVersionRef = useRef<number>(-1);
+  const lastSyncedStatusRef = useRef<string>('');
 
   // Initialize YouTube Iframe API
   useEffect(() => {
+    console.log('%c[PLAYER-LIFECYCLE] HostPlayer useEffect mount', 'color: #8b5cf6;');
     if (!window.YT) {
       const tag = document.createElement('script');
       tag.src = 'https://www.youtube.com/iframe_api';
@@ -34,9 +43,19 @@ export const HostPlayer: React.FC<HostPlayerProps> = ({ state, onSyncNeeded }) =
     }
 
     const initPlayer = () => {
+      console.log('%c[PLAYER] initPlayer called', 'color: #ec4899; font-weight: bold;', {
+        containerExists: !!containerRef.current,
+        alreadyHasPlayer: !!playerRef.current,
+      });
       if (!containerRef.current || playerRef.current) return;
 
-      playerRef.current = new window.YT.Player(containerRef.current, {
+      // Create an unmanaged DOM slot so React Virtual DOM never touches or replaces the <iframe>
+      containerRef.current.innerHTML = '';
+      const iframeSlot = document.createElement('div');
+      iframeSlot.id = 'yt-unmanaged-slot';
+      containerRef.current.appendChild(iframeSlot);
+
+      playerRef.current = new window.YT.Player(iframeSlot, {
         height: '100%',
         width: '100%',
         videoId: state.currentTrack?.id || '',
@@ -53,14 +72,26 @@ export const HostPlayer: React.FC<HostPlayerProps> = ({ state, onSyncNeeded }) =
         },
         events: {
           onReady: (event: any) => {
-            setIsPlayerReady(true);
+            console.log('%c[PLAYER] onReady fired', 'color: #10b981; font-weight: bold;');
+            isPlayerReadyRef.current = true;
             event.target.setVolume(85);
             currentLoadedVideoIdRef.current = state.currentTrack?.id || null;
+            lastSyncedVersionRef.current = state.version || 0;
+            lastSyncedStatusRef.current = state.status;
           },
           onStateChange: (event: any) => {
-            // If the video naturally ends, advance queue via state JSON
+            const states: Record<number, string> = {
+              '-1': 'UNSTARTED',
+              0: 'ENDED',
+              1: 'PLAYING',
+              2: 'PAUSED',
+              3: 'BUFFERING',
+              5: 'CUED',
+            };
+            console.log('%c[PLAYER] onStateChange:', 'color: #06b6d4;', states[event.data] || event.data);
+            // If the video naturally ends, advance queue via state JSON on server
             if (event.data === window.YT.PlayerState.ENDED) {
-              skipTrack().then(() => onSyncNeeded());
+              skipTrack().catch((e) => console.error('Error skipping track on ended:', e));
             }
           },
         },
@@ -87,34 +118,57 @@ export const HostPlayer: React.FC<HostPlayerProps> = ({ state, onSyncNeeded }) =
 
   // Logical Client Reconciler: Takes commands solely from state.json
   useEffect(() => {
-    if (!isPlayerReady || !playerRef.current) return;
+    console.log('%c[PLAYER-RECONCILER] Effect evaluated', 'color: #f59e0b; font-weight: bold;', {
+      isPlayerReady: isPlayerReadyRef.current,
+      targetTrackId: state.currentTrack?.id,
+      currentLoadedVideoId: currentLoadedVideoIdRef.current,
+      targetStatus: state.status,
+      lastSyncedStatus: lastSyncedStatusRef.current,
+      version: state.version,
+      lastSyncedVersion: lastSyncedVersionRef.current,
+    });
+
+    if (!isPlayerReadyRef.current || !playerRef.current) return;
 
     const player = playerRef.current;
     const targetTrackId = state.currentTrack?.id || null;
     const targetStatus = state.status;
-    const targetTime = calculatePlayhead(state, Date.now() / 1000);
+    const targetTime = state.currentTime || 0;
+    const version = state.version || 0;
 
     try {
-      // 1. Reconcile Track / Video ID
-      if (targetTrackId && targetTrackId !== currentLoadedVideoIdRef.current) {
+      // 1. Reconcile Track / Video ID (Identity Gate)
+      if (targetTrackId !== currentLoadedVideoIdRef.current) {
+        console.warn('[PLAYER-RECONCILER] Action: Track ID Changed ->', targetTrackId);
         currentLoadedVideoIdRef.current = targetTrackId;
-        if (targetStatus === 'playing') {
-          player.loadVideoById({
-            videoId: targetTrackId,
-            startSeconds: Math.floor(targetTime),
-          });
+        lastSyncedVersionRef.current = version;
+        lastSyncedStatusRef.current = targetStatus;
+
+        if (targetTrackId) {
+          if (targetStatus === 'playing') {
+            console.warn('[PLAYER-RECONCILER] Action: loadVideoById()');
+            player.loadVideoById({
+              videoId: targetTrackId,
+              startSeconds: Math.floor(targetTime),
+            });
+          } else {
+            console.warn('[PLAYER-RECONCILER] Action: cueVideoById()');
+            player.cueVideoById({
+              videoId: targetTrackId,
+              startSeconds: Math.floor(targetTime),
+            });
+          }
         } else {
-          player.cueVideoById({
-            videoId: targetTrackId,
-            startSeconds: Math.floor(targetTime),
-          });
+          if (player.stopVideo) {
+            console.warn('[PLAYER-RECONCILER] Action: stopVideo()');
+            player.stopVideo();
+          }
         }
         return;
       }
 
       // If no track exists, stop player
       if (!targetTrackId) {
-        currentLoadedVideoIdRef.current = null;
         if (player.stopVideo) {
           player.stopVideo();
         }
@@ -122,28 +176,38 @@ export const HostPlayer: React.FC<HostPlayerProps> = ({ state, onSyncNeeded }) =
       }
 
       // 2. Reconcile Playback Status (Playing vs Paused/Idle)
-      const ytState = player.getPlayerState ? player.getPlayerState() : null;
-      const isYtPlaying = ytState === 1; // 1 = YT.PlayerState.PLAYING
+      if (targetStatus !== lastSyncedStatusRef.current) {
+        console.warn('[PLAYER-RECONCILER] Action: Playback Status Changed ->', targetStatus);
+        lastSyncedStatusRef.current = targetStatus;
+        const ytState = player.getPlayerState ? player.getPlayerState() : null;
+        const isYtPlaying = ytState === 1; // 1 = YT.PlayerState.PLAYING
 
-      if (targetStatus === 'playing' && !isYtPlaying) {
-        player.playVideo();
-      } else if ((targetStatus === 'paused' || targetStatus === 'idle') && isYtPlaying) {
-        player.pauseVideo();
+        if (targetStatus === 'playing' && !isYtPlaying) {
+          console.warn('[PLAYER-RECONCILER] Action: playVideo()');
+          player.playVideo();
+        } else if ((targetStatus === 'paused' || targetStatus === 'idle') && isYtPlaying) {
+          console.warn('[PLAYER-RECONCILER] Action: pauseVideo()');
+          player.pauseVideo();
+        }
       }
 
-      // 3. Reconcile Drift / Seek Position
-      if (player.getCurrentTime) {
-        const actualPlayerTime = player.getCurrentTime();
-        const drift = Math.abs(targetTime - actualPlayerTime);
-        // Only seek if drift exceeds threshold (2.0s) to prevent jitter
-        if (drift > 2.0) {
-          player.seekTo(targetTime, true);
+      // 3. Reconcile Explicit Seek Command (Triggered strictly when host state version changes)
+      if (version !== lastSyncedVersionRef.current) {
+        console.warn('[PLAYER-RECONCILER] Action: Version Changed (Seek Check) ->', version);
+        lastSyncedVersionRef.current = version;
+        if (player.getCurrentTime && player.seekTo) {
+          const actualPlayerTime = player.getCurrentTime();
+          const drift = Math.abs(targetTime - actualPlayerTime);
+          if (drift > 1.5) {
+            console.warn('[PLAYER-RECONCILER] Action: seekTo() drift was', drift);
+            player.seekTo(targetTime, true);
+          }
         }
       }
     } catch (err) {
       console.warn('Reconciler command error:', err);
     }
-  }, [state, isPlayerReady]);
+  }, [state.currentTrack?.id, state.status, state.version]);
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = Number(e.target.value);
@@ -172,16 +236,16 @@ export const HostPlayer: React.FC<HostPlayerProps> = ({ state, onSyncNeeded }) =
   };
 
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden shadow-2xl">
+    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden shadow-2xl isolate [transform:translateZ(0)]">
       {/* Header Bar */}
       <div className="px-5 py-3 bg-neutral-950 border-b border-neutral-800 flex items-center justify-between">
         <div className="flex items-center space-x-2.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" />
+          <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
           <span className="text-xs font-semibold tracking-wide uppercase text-orange-400">
-            Host Headless Audio Engine
+            Host Audio Engine
           </span>
           <span className="text-[11px] px-2 py-0.5 rounded-full bg-neutral-900 text-neutral-300 font-mono border border-neutral-800">
-            State-Driven IFrame
+            State-Driven Player
           </span>
         </div>
 
@@ -210,19 +274,19 @@ export const HostPlayer: React.FC<HostPlayerProps> = ({ state, onSyncNeeded }) =
       </div>
 
       {/* Video Canvas Container with Pointer Event Shield */}
-      <div className="relative aspect-video w-full bg-black flex items-center justify-center overflow-hidden">
-        {/* The Stripped YouTube Iframe Target */}
+      <div className="relative aspect-video w-full bg-black flex items-center justify-center overflow-hidden [transform:translateZ(0)]">
+        {/* The Stripped YouTube Iframe Target Container (Unmanaged slot) */}
         <div className="w-full h-full" ref={containerRef} />
 
-        {/* Pointer-Event Blocking Overlay Shield: Prevents manual YouTube controls clicks */}
+        {/* Pointer-Event Blocking Overlay Shield */}
         <div
-          className="absolute inset-0 z-20 cursor-default select-none pointer-events-auto flex flex-col items-center justify-between p-4 bg-gradient-to-t from-black/90 via-transparent to-black/50"
+          className="absolute inset-0 z-20 cursor-default select-none pointer-events-auto flex flex-col items-center justify-between p-4 bg-gradient-to-t from-black/80 via-transparent to-black/40"
           title="Direct click disabled: Player strictly commanded by JSON State Machine"
         >
           <div className="w-full flex justify-between items-start">
-            <div className="bg-neutral-950/90 backdrop-blur border border-neutral-850 rounded-lg px-3 py-1.5 text-xs text-neutral-300 flex items-center space-x-2">
+            <div className="bg-neutral-950/90 backdrop-blur border border-neutral-800 rounded-lg px-3 py-1.5 text-xs text-neutral-300 flex items-center space-x-2">
               <ShieldAlert className="w-3.5 h-3.5 text-orange-400" />
-              <span>Native controls stripped • State JSON authoritative</span>
+              <span>State JSON authoritative</span>
             </div>
             {state.currentTrack && (
               <span className="bg-neutral-900/90 border border-orange-500/40 text-orange-400 text-xs px-2.5 py-1 rounded-md flex items-center space-x-1 font-mono">
@@ -239,13 +303,17 @@ export const HostPlayer: React.FC<HostPlayerProps> = ({ state, onSyncNeeded }) =
             </div>
           )}
 
-          <div className="w-full text-right">
-            <span className="text-[10px] text-neutral-400 font-mono">
-              Inferred Epoch T: {Math.floor(calculatePlayhead(state))}s
-            </span>
-          </div>
+          <div />
         </div>
       </div>
     </div>
   );
 };
+
+export const HostPlayer = React.memo(HostPlayerComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.state.currentTrack?.id === nextProps.state.currentTrack?.id &&
+    prevProps.state.status === nextProps.state.status &&
+    prevProps.state.version === nextProps.state.version
+  );
+});

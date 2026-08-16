@@ -56,7 +56,7 @@ export async function fetchYouTubeMetadata(videoId: string, originalUrl?: string
   const targetUrl = originalUrl || `https://www.youtube.com/watch?v=${videoId}`;
 
   try {
-    const res = await fetch(`/api/oembed.php?url=${encodeURIComponent(targetUrl)}`);
+    const res = await fetch(`/api/oembed?url=${encodeURIComponent(targetUrl)}`);
     if (res.ok) {
       const data = await res.json();
       return {

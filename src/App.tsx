@@ -12,6 +12,7 @@ import { PhpDeploymentModal } from './components/PhpDeploymentModal';
 import { Shield, Sparkles, Radio, Users, Cpu } from 'lucide-react';
 
 export default function App() {
+  console.log('%c[RENDER] App.tsx root component', 'color: #38bdf8;');
   const [isHost, setIsHost] = useState<boolean>(() => Boolean(getStoredHostToken()));
   const [isHostModalOpen, setIsHostModalOpen] = useState<boolean>(false);
   const [isDeployModalOpen, setIsDeployModalOpen] = useState<boolean>(false);
@@ -20,8 +21,6 @@ export default function App() {
     state,
     playlist,
     playhead,
-    isSyncing,
-    syncNow,
   } = useSyncState(isHost);
 
   useEffect(() => {
@@ -33,7 +32,6 @@ export default function App() {
       {/* Top Navbar */}
       <Header
         isHost={isHost}
-        isSyncing={isSyncing}
         roomName={playlist.settings?.roomName || 'Crowd-Q Lounge'}
         onOpenHostModal={() => setIsHostModalOpen(true)}
         onOpenDeployModal={() => setIsDeployModalOpen(true)}
@@ -86,9 +84,9 @@ export default function App() {
 
             {/* Host-Exclusive Audio Engine & Master Controls */}
             {isHost ? (
-              <div className="space-y-6 animate-in fade-in duration-300">
-                <HostPlayer state={state} onSyncNeeded={syncNow} />
-                <HostControls state={state} playhead={playhead} onSyncNeeded={syncNow} />
+              <div className="space-y-6">
+                <HostPlayer state={state} />
+                <HostControls state={state} playhead={playhead} />
               </div>
             ) : (
               <div className="p-6 rounded-3xl bg-neutral-900/50 border border-neutral-800/70 space-y-3">
@@ -106,13 +104,12 @@ export default function App() {
           {/* Right Column: Add Song Drawer & Live Queue */}
           <div className="lg:col-span-5 space-y-8">
             {/* Song Submitter Drawer */}
-            <AddSongDrawer isHost={isHost} onSongAdded={syncNow} />
+            <AddSongDrawer isHost={isHost} />
 
             {/* Live Queue Explorer */}
             <QueueList
               playlist={playlist}
               isHost={isHost}
-              onQueueUpdated={syncNow}
             />
           </div>
         </div>

@@ -11,34 +11,9 @@ if ($uri !== '/' && file_exists(__DIR__ . '/../' . $uri)) {
     return false;
 }
 
-// Route API endpoints
-$routes = [
-    '/api/sync'   => __DIR__ . '/../api/sync.php',
-    '/api/state'  => __DIR__ . '/../api/state.php',
-    '/api/queue'  => __DIR__ . '/../api/queue.php',
-    '/api/skip'   => __DIR__ . '/../api/skip.php',
-    '/api/auth'   => __DIR__ . '/../api/auth.php',
-    '/api/oembed' => __DIR__ . '/../api/oembed.php',
-];
-
-if (isset($routes[$uri])) {
-    require $routes[$uri];
-    exit;
-}
-
-// Prefix matching for queries like /api/oembed?url=...
-foreach ($routes as $route => $file) {
-    if (strpos($uri, $route) === 0) {
-        require $file;
-        exit;
-    }
-}
-
-// Fallback for API
-if (strpos($uri, '/api/') === 0) {
-    header('Content-Type: application/json');
-    http_response_code(404);
-    echo json_encode(['error' => 'Endpoint not found', 'path' => $uri]);
+// Route API endpoints to Front Controller
+if (strpos($uri, '/api') === 0) {
+    require __DIR__ . '/../api/index.php';
     exit;
 }
 

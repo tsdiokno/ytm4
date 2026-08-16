@@ -5,10 +5,10 @@ import { Link2, Plus, Sparkles, AlertCircle, Loader2, CheckCircle2 } from 'lucid
 
 interface AddSongDrawerProps {
   isHost: boolean;
-  onSongAdded: () => void;
+  onSongAdded?: () => void;
 }
 
-export const AddSongDrawer: React.FC<AddSongDrawerProps> = ({ isHost, onSongAdded }) => {
+export const AddSongDrawer: React.FC<AddSongDrawerProps> = ({ isHost }) => {
   const [urlInput, setUrlInput] = useState<string>('');
   const [submitterName, setSubmitterName] = useState<string>(
     () => localStorage.getItem('crowd_q_user_name') || localStorage.getItem('crowdcue_user_name') || 'Guest'
@@ -57,6 +57,13 @@ export const AddSongDrawer: React.FC<AddSongDrawerProps> = ({ isHost, onSongAdde
 
   const handleSubmit = async (e: React.FormEvent, playImmediately: boolean = false) => {
     e.preventDefault();
+    console.log('%c[EVENT] AddSong: Form Submitted', 'color: #ef4444; font-weight: bold;', {
+      urlInput,
+      preview,
+      playImmediately,
+      submitterName,
+    });
+
     if (!preview) {
       setFeedback({ type: 'error', message: 'Please enter a valid YouTube or YouTube Music link.' });
       return;
@@ -68,6 +75,7 @@ export const AddSongDrawer: React.FC<AddSongDrawerProps> = ({ isHost, onSongAdde
     localStorage.setItem('crowd_q_user_name', submitterName);
 
     try {
+      console.log('%c[API] POST /api/queue -> Sending request', 'color: #3b82f6;');
       const res = await addSongToQueue({
         id: preview.id,
         url: urlInput,
@@ -78,6 +86,7 @@ export const AddSongDrawer: React.FC<AddSongDrawerProps> = ({ isHost, onSongAdde
         addedBy: submitterName || 'Guest',
         playImmediately,
       });
+      console.log('%c[API] POST /api/queue -> Response received', 'color: #10b981; font-weight: bold;', res);
 
       if (res.success) {
         setFeedback({
@@ -86,11 +95,11 @@ export const AddSongDrawer: React.FC<AddSongDrawerProps> = ({ isHost, onSongAdde
         });
         setUrlInput('');
         setPreview(null);
-        onSongAdded();
       } else {
         setFeedback({ type: 'error', message: res.error || 'Failed to cue song' });
       }
-    } catch {
+    } catch (err) {
+      console.error('[API] POST /api/queue -> Network error', err);
       setFeedback({ type: 'error', message: 'Network error adding song' });
     } finally {
       setIsSubmitting(false);

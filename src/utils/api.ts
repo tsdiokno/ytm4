@@ -21,28 +21,51 @@ export function getStoredHostToken(): string | null {
   );
 }
 
-export async function fetchSyncState(): Promise<SyncResponse | null> {
+let lastSyncETag: string | null = null;
+
+export type SyncFetchResult =
+  | { notModified: true }
+  | { notModified: false; data: SyncResponse }
+  | null;
+
+export async function fetchSyncState(): Promise<SyncFetchResult> {
   try {
-    const res = await fetch('/api/sync.php', {
-      headers: {
-        'Cache-Control': 'no-cache',
-      },
-    });
-    if (res.status === 304) {
-      return null; // Not modified
+    const headers: Record<string, string> = {
+      'Cache-Control': 'no-cache',
+    };
+    if (lastSyncETag) {
+      headers['If-None-Match'] = lastSyncETag;
     }
+
+    const res = await fetch('/api/sync', { headers });
+
+    if (res.status === 304) {
+      return { notModified: true };
+    }
+
+    const etagHeader = res.headers.get('ETag');
+    if (etagHeader) {
+      lastSyncETag = etagHeader;
+    }
+
     if (res.ok) {
-      return await res.json();
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        console.warn('Sync endpoint returned non-JSON response');
+        return null;
+      }
+      const data: SyncResponse = await res.json();
+      return { notModified: false, data };
     }
   } catch (err) {
-    console.error('Sync failed:', err);
+    console.warn('Sync poll check:', err);
   }
   return null;
 }
 
 export async function authenticateHost(password: string): Promise<HostAuthResponse> {
   try {
-    const res = await fetch('/api/auth.php', {
+    const res = await fetch('/api/auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password }),
@@ -66,7 +89,7 @@ export async function updatePlaybackState(
   }
 
   try {
-    const res = await fetch('/api/state.php', {
+    const res = await fetch('/api/state', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -99,7 +122,7 @@ export async function addSongToQueue(trackData: {
   }
 
   try {
-    const res = await fetch('/api/queue.php', {
+    const res = await fetch('/api/queue', {
       method: 'POST',
       headers,
       body: JSON.stringify(trackData),
@@ -118,7 +141,7 @@ export async function removeSongFromQueue(uid: string): Promise<{ success: boole
   }
 
   try {
-    const res = await fetch(`/api/queue.php?uid=${encodeURIComponent(uid)}`, {
+    const res = await fetch(`/api/queue?uid=${encodeURIComponent(uid)}`, {
       method: 'DELETE',
       headers,
     });
@@ -135,7 +158,7 @@ export async function skipTrack(): Promise<{ success: boolean; state?: PlaybackS
   }
 
   try {
-    const res = await fetch('/api/skip.php', {
+    const res = await fetch('/api/skip', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -156,7 +179,7 @@ export async function reorderQueue(queue: TrackItem[]): Promise<{ success: boole
   }
 
   try {
-    const res = await fetch('/api/queue.php', {
+    const res = await fetch('/api/queue', {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

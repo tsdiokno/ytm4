@@ -1,8 +1,11 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /
 
-    # Allow access to api/*.php files directly
+    # Route /api calls directly to api/index.php if not an existing file
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^api(/.*)?$ api/index.php [QSA,L]
+
+    # Direct existing api files
     RewriteRule ^api/ - [L]
 
     # Protect data directory

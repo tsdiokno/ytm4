@@ -3,15 +3,13 @@ import { Radio, Lock, Unlock, Server } from 'lucide-react';
 
 interface HeaderProps {
   isHost: boolean;
-  isSyncing: boolean;
   roomName: string;
   onOpenHostModal: () => void;
   onOpenDeployModal: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({
+export const Header: React.FC<HeaderProps> = React.memo(({
   isHost,
-  isSyncing,
   roomName,
   onOpenHostModal,
   onOpenDeployModal,
@@ -90,4 +88,4 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
     </header>
   );
-};
+});

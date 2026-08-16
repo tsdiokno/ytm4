@@ -1,36 +1,31 @@
 import { PlaybackState } from '../types';
 
 /**
- * Calculates inferred playhead in seconds using epoch mathematics.
- * Zero-API, drift-free, 60fps calculation.
+ * Returns the authoritative playhead position from the playback state.
+ * Direct, deterministic, and free of client-side clock drift.
  */
-export function calculatePlayhead(state: PlaybackState | null, clientNowSec: number = Date.now() / 1000): number {
+export function calculatePlayhead(state: PlaybackState | null): number {
   if (!state || !state.currentTrack) {
     return 0;
   }
-
   const duration = state.currentTrack.duration || 180;
-  const refTime = state.referenceTime || 0;
-
   if (state.status === 'playing') {
-    const elapsed = Math.max(0, clientNowSec - state.epochTimestamp);
-    const rate = state.playbackRate || 1.0;
-    const inferred = refTime + elapsed * rate;
-    return Math.min(duration, Math.max(0, inferred));
+    const now = Math.floor(Date.now() / 1000);
+    const elapsed = Math.max(0, now - (state.updatedAt || now));
+    return Math.min(duration, (state.currentTime || 0) + elapsed);
   }
-
-  // If paused or buffering, playhead remains anchored at referenceTime
-  return Math.min(duration, Math.max(0, refTime));
+  const current = state.currentTime || 0;
+  return Math.min(duration, Math.max(0, current));
 }
 
 /**
- * Checks if the track has naturally elapsed based on epoch inference
+ * Checks if the track duration has elapsed
  */
-export function isTrackFinished(state: PlaybackState | null, clientNowSec: number = Date.now() / 1000): boolean {
+export function isTrackFinished(state: PlaybackState | null): boolean {
   if (!state || !state.currentTrack || state.status !== 'playing') {
     return false;
   }
-  const playhead = calculatePlayhead(state, clientNowSec);
+  const playhead = calculatePlayhead(state);
   const duration = state.currentTrack.duration || 180;
   return playhead >= duration - 0.5;
 }
@@ -52,3 +47,4 @@ export function formatDuration(seconds: number): string {
   }
   return `${pad(mins)}:${pad(secs)}`;
 }
+

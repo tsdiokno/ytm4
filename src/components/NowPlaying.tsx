@@ -9,7 +9,7 @@ interface NowPlayingProps {
   isHost: boolean;
 }
 
-export const NowPlaying: React.FC<NowPlayingProps> = ({ state, playhead, isHost }) => {
+export const NowPlaying: React.FC<NowPlayingProps> = React.memo(({ state, playhead, isHost }) => {
   const current = state.currentTrack;
   const duration = current?.duration || 180;
   const progressPercent = Math.min(100, Math.max(0, (playhead / duration) * 100));
@@ -41,7 +41,7 @@ export const NowPlaying: React.FC<NowPlayingProps> = ({ state, playhead, isHost 
 
           <div className="flex items-center space-x-2">
             <span className="text-xs px-2.5 py-1 rounded-full bg-neutral-950 text-neutral-400 border border-neutral-800 font-mono">
-              Sync Epoch v{state.version}
+              State v{state.version}
             </span>
           </div>
         </div>
@@ -110,7 +110,7 @@ export const NowPlaying: React.FC<NowPlayingProps> = ({ state, playhead, isHost 
           <div className="flex justify-between text-xs font-mono text-neutral-400 px-0.5">
             <span>{formatDuration(playhead)}</span>
             <span className="text-[11px] text-neutral-500 hidden sm:inline">
-              {!isHost ? 'Guest View • 60 FPS Epoch Sync' : 'Live Host Broadcast'}
+              {!isHost ? 'Guest View • Authoritative Sync' : 'Live Host Broadcast'}
             </span>
             <span>{formatDuration(duration)}</span>
           </div>
@@ -118,4 +118,4 @@ export const NowPlaying: React.FC<NowPlayingProps> = ({ state, playhead, isHost 
       </div>
     </div>
   );
-};
+});

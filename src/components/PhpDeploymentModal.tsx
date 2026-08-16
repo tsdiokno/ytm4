@@ -35,10 +35,9 @@ export const PhpDeploymentModal: React.FC<PhpDeploymentModalProps> = ({ isOpen, 
     "title": "lofi hip hop radio",
     "duration": 3600
   },
-  "referenceTime": 42.5,
-  "epochTimestamp": 1723790400.12,
-  "playbackRate": 1.0,
-  "version": 104
+  "currentTime": 42.5,
+  "version": 104,
+  "updatedAt": 1723790400
 }`;
 
   return (
@@ -58,9 +57,9 @@ export const PhpDeploymentModal: React.FC<PhpDeploymentModalProps> = ({ isOpen, 
             <Server className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-neutral-100">PHP / Apache Deployment Architecture</h3>
+            <h3 className="text-xl font-bold text-neutral-100">PHP / Laravel Herd / Apache Architecture</h3>
             <p className="text-xs text-neutral-400">
-              Zero-database, epoch-inferred JSON sync ready for drop-in shared hosting (cPanel / Apache / PHP 7.4+)
+              Zero-database, authoritative JSON state polling ready for Laravel Herd, Nginx, or cPanel Apache (PHP 7.4+)
             </p>
           </div>
         </div>
@@ -70,10 +69,10 @@ export const PhpDeploymentModal: React.FC<PhpDeploymentModalProps> = ({ isOpen, 
           <div className="p-3.5 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-1">
             <div className="flex items-center space-x-2 text-orange-400 text-xs font-semibold">
               <Cpu className="w-4 h-4" />
-              <span>Epoch Inferences</span>
+              <span>Authoritative Polling</span>
             </div>
             <p className="text-[11px] text-neutral-400">
-              Clients compute 60 FPS playhead positions locally. 0 server API hits during normal playback.
+              Clean, deterministic state synchronization with ETag HTTP 304 caching.
             </p>
           </div>
 

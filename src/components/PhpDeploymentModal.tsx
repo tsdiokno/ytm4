@@ -35,9 +35,11 @@ export const PhpDeploymentModal: React.FC<PhpDeploymentModalProps> = ({ isOpen, 
     "title": "lofi hip hop radio",
     "duration": 3600
   },
-  "currentTime": 42.5,
+  "referenceTime": 42.5,
+  "epochTimestamp": 1723790442,
+  "playbackRate": 1.0,
   "version": 104,
-  "updatedAt": 1723790400
+  "updatedAt": 1723790442
 }`;
 
   return (
@@ -97,25 +99,20 @@ export const PhpDeploymentModal: React.FC<PhpDeploymentModalProps> = ({ isOpen, 
           </div>
         </div>
 
-        {/* 3-Path Tooling Architecture */}
+        {/* Tooling Architecture */}
         <div className="space-y-2">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-neutral-300">
-            3-Path Tooling &amp; Development Workflows
+            Development & Production Workflows
           </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div className="p-3.5 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-1.5">
-              <span className="font-semibold text-orange-400 block font-mono">Path 1: Dev Shim</span>
-              <p className="text-[11px] text-neutral-400">Zero PHP installation needed. Full TypeScript Node/Express simulation.</p>
+              <span className="font-semibold text-orange-400 block font-mono">Laravel Herd + Vite</span>
+              <p className="text-[11px] text-neutral-400">Fast local dev with Herd-hosted PHP API and Vite HMR frontend.</p>
               <code className="text-[11px] bg-neutral-900 px-2 py-1 rounded block text-neutral-300 font-mono">pnpm dev</code>
             </div>
             <div className="p-3.5 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-1.5">
-              <span className="font-semibold text-orange-400 block font-mono">Path 2: PHP + Composer</span>
-              <p className="text-[11px] text-neutral-400">Native PHP CLI server + Composer tooling + Vite proxy.</p>
-              <code className="text-[11px] bg-neutral-900 px-2 py-1 rounded block text-neutral-300 font-mono">composer serve<br/>pnpm dev:php</code>
-            </div>
-            <div className="p-3.5 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-1.5">
-              <span className="font-semibold text-orange-400 block font-mono">Path 3: Production Build</span>
-              <p className="text-[11px] text-neutral-400">Generates dist/ with .htaccess, native PHP scripts, and server.cjs.</p>
+              <span className="font-semibold text-orange-400 block font-mono">Production Build</span>
+              <p className="text-[11px] text-neutral-400">Generates dist/ with .htaccess, LocalValetDriver.php, and PHP front controller.</p>
               <code className="text-[11px] bg-neutral-900 px-2 py-1 rounded block text-neutral-300 font-mono">pnpm build</code>
             </div>
           </div>
@@ -130,19 +127,14 @@ export const PhpDeploymentModal: React.FC<PhpDeploymentModalProps> = ({ isOpen, 
 {`public_html/ (or dist/)
 ├── index.html            # Compiled React SPA
 ├── .htaccess             # Apache rewrite rules & JSON protection
+├── LocalValetDriver.php  # Laravel Herd / Valet driver
 ├── assets/               # Bundled JS / CSS
 ├── data/
 │   ├── .htaccess         # "Require all denied" (Blocks direct JSON reads)
 │   ├── state.json        # Atomic epoch playback state
 │   └── playlist.json     # Dynamic crowd queue & history
 └── api/
-    ├── common.php        # Atomic flock() & HMAC auth helpers
-    ├── sync.php          # Polling endpoint with ETag (304 Not Modified)
-    ├── state.php         # Host play/pause/seek state updates
-    ├── queue.php         # Add / remove / reorder queue
-    ├── skip.php          # Pop next song into state
-    ├── auth.php          # Password challenge verification
-    └── oembed.php        # YouTube metadata proxy`}
+    └── index.php         # Unified front controller with atomic flock()`}
           </pre>
         </div>
 

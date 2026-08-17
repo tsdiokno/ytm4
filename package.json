@@ -5,13 +5,9 @@
   "type": "module",
   "packageManager": "pnpm@10.5.2",
   "scripts": {
-    "dev": "tsx server.ts",
-    "dev:shim": "tsx server.ts",
-    "dev:php": "vite",
-    "php:serve": "php -S 127.0.0.1:8000 scripts/php-router.php",
-    "build": "vite build && node scripts/copy-php.mjs && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
-    "start": "node dist/server.cjs",
-    "preview": "node dist/server.cjs",
+    "dev": "vite",
+    "build": "vite build && node scripts/copy-php.mjs",
+    "preview": "vite preview",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
@@ -28,6 +24,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.0",
     "tailwindcss": "^4.1.14",

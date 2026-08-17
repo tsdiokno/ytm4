@@ -1,14 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PlaybackState, PlaylistData } from '../types';
 import { fetchSyncState } from '../utils/api';
+import { calculatePlayhead } from '../utils/epoch';
 
 export function useSyncState(_isHost: boolean) {
   const [state, setState] = useState<PlaybackState>({
     status: 'idle',
     currentTrack: null,
-    currentTime: 0,
+    referenceTime: 0,
+    epochTimestamp: Date.now() / 1000,
+    playbackRate: 1.0,
     version: 1,
-    updatedAt: Math.floor(Date.now() / 1000),
+    updatedAt: Date.now() / 1000,
   });
 
   const [playlist, setPlaylist] = useState<PlaylistData>({
@@ -17,10 +20,8 @@ export function useSyncState(_isHost: boolean) {
     settings: { roomName: 'Crowd-Q Lounge' },
   });
 
+  const [playhead, setPlayhead] = useState<number>(0);
   const [lastSyncTime, setLastSyncTime] = useState<number>(Date.now());
-
-  // Direct playhead comes from authoritative state.currentTime
-  const playhead = state.currentTime || 0;
 
   // Sync poller
   const syncNow = useCallback(async () => {
@@ -35,13 +36,14 @@ export function useSyncState(_isHost: boolean) {
           queueLength: incomingPlaylist.queue.length,
         });
 
-        // Only update state if version, status, track, or currentTime changed
+        // Only update state if version, status, track, or epoch vector changed
         setState((prev) => {
           if (
             prev.version === incomingState.version &&
             prev.status === incomingState.status &&
             prev.currentTrack?.id === incomingState.currentTrack?.id &&
-            prev.currentTime === incomingState.currentTime
+            prev.referenceTime === incomingState.referenceTime &&
+            prev.epochTimestamp === incomingState.epochTimestamp
           ) {
             return prev;
           }
@@ -108,6 +110,21 @@ export function useSyncState(_isHost: boolean) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [syncNow]);
+
+  // 60 FPS requestAnimationFrame epoch playhead ticker
+  useEffect(() => {
+    let animId: number;
+
+    const tick = () => {
+      const nowSec = Date.now() / 1000;
+      const currentPos = calculatePlayhead(state, nowSec);
+      setPlayhead(currentPos);
+      animId = requestAnimationFrame(tick);
+    };
+
+    animId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animId);
+  }, [state]);
 
   return {
     state,

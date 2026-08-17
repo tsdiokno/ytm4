@@ -15,7 +15,10 @@ export interface TrackItem {
 export interface PlaybackState {
   status: PlaybackStatus;
   currentTrack: TrackItem | null;
-  currentTime: number; // in seconds
+  currentTime?: number; // in seconds (legacy alias, optional)
+  referenceTime: number; // in seconds
+  epochTimestamp: number; // in seconds (float or int)
+  playbackRate: number;
   version: number;
   updatedAt: number;
 }

@@ -133,7 +133,7 @@ const HostPlayerComponent: React.FC<HostPlayerProps> = ({ state }) => {
     const player = playerRef.current;
     const targetTrackId = state.currentTrack?.id || null;
     const targetStatus = state.status;
-    const targetTime = state.currentTime || 0;
+    const targetTime = calculatePlayhead(state);
     const version = state.version || 0;
 
     try {

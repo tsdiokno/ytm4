@@ -13,7 +13,7 @@ export default defineConfig(({mode}) => {
     env.PHP_BACKEND_URL ||
     process.env.VITE_PHP_BACKEND_URL ||
     process.env.PHP_BACKEND_URL ||
-    'http://127.0.0.1:8000';
+    'http://crowd-q.test';
 
   console.log(`[Vite Proxy] Forwarding /api requests to: ${backendTarget}`);
 

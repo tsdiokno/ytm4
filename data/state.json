@@ -1,19 +1,20 @@
 {
-  "status": "idle",
-  "currentTrack": {
-    "id": "jfKfPfyJRdk",
-    "url": "https://www.youtube.com/watch?v=jfKfPfyJRdk",
-    "title": "lofi hip hop radio 📚 - beats to relax/study to",
-    "author": "Lofi Girl",
-    "thumbnail": "https://i.ytimg.com/vi/jfKfPfyJRdk/hqdefault.jpg",
-    "duration": 3600,
-    "addedBy": "System",
-    "addedAt": 1723790400000,
-    "uid": "init-track-1"
-  },
-  "referenceTime": 0,
-  "epochTimestamp": 1723790400,
-  "playbackRate": 1.0,
-  "version": 1,
-  "updatedAt": 1723790400
+    "status": "playing",
+    "currentTrack": {
+        "id": "kP88uNBX4kk",
+        "url": "https://www.youtube.com/watch?v=kP88uNBX4kk",
+        "title": "Robotski bazenski sesalec Wybot Solar Vision 2",
+        "author": "CF Group Adria",
+        "thumbnail": "https://i.ytimg.com/vi/kP88uNBX4kk/hqdefault.jpg",
+        "duration": 200,
+        "addedBy": "Guest",
+        "addedAt": 1786955491722,
+        "uid": "track_1786955491_a5afa6"
+    },
+    "referenceTime": 0,
+    "epochTimestamp": 1786955585,
+    "playbackRate": 1,
+    "version": 4,
+    "updatedAt": 1786955585,
+    "currentTime": 0
 }

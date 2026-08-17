@@ -40,16 +40,12 @@ Inspired by Spotify’s *Jam* feature — but built for YouTube — it lets ever
 
 ```bash
 # 1. Clone & install
-git clone https://github.com/tsdiokno/ytm4.git
+git clone https://github.com/tsdiokno/crowd-q.git
 cd crowd-q
 pnpm install
 
-# 2. Start Vite Dev Server (proxies to PHP)
-pnpm run dev:all
-
-# Or run separately:
-# Terminal 1: pnpm run dev:php  (PHP on port 8000)
-# Terminal 2: pnpm run dev      (Vite Frontend)
+# 2. Start Vite Dev Server (proxies API requests to Laravel Herd)
+pnpm run dev
 ```
 
 ### Production Build

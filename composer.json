@@ -10,15 +10,8 @@
     "phpstan/phpstan": "^1.10",
     "friendsofphp/php-cs-fixer": "^3.50"
   },
-  "autoload": {
-    "psr-4": {
-      "CrowdQ\\": "api/src/"
-    }
-  },
   "scripts": {
-    "serve": "php -S 0.0.0.0:8000 -t api scripts/php-router.php",
     "lint": "php-cs-fixer fix --dry-run --diff",
-    "format": "php-cs-fixer fix",
-    "phpstan": "phpstan analyse api/src --level=8"
+    "format": "php-cs-fixer fix"
   }
 }
